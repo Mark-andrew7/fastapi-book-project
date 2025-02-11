@@ -144,3 +144,43 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Support
 
 For support, please open an issue in the GitHub repository.
+
+
+## Deployment Instructions
+1. Set Up the Server
+Ensure you have a server with Python installed. Update system packages:
+sudo apt update && sudo apt upgrade -y
+2. Install Nginx
+sudo apt install nginx -y
+3. Clone the Repository
+git clone https://github.com/hng12-devbotops/fastapi-book-project.git
+cd fastapi-book-project
+4. Set Up a Virtual Environment
+python3 -m venv venv
+source venv/bin/activate
+5. Install Dependencies
+pip install -r requirements.txt
+6. Run the FastAPI Application with Uvicorn
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+7. Configure Nginx as a Reverse Proxy
+Create an Nginx configuration file:
+sudo nano /etc/nginx/sites-available/fastapi
+Add the following content:
+server {
+    listen 80;
+    server_name your_domain_or_ip;
+
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+Save and exit. Then enable the configuration:
+sudo ln -s /etc/nginx/sites-available/fastapi /etc/nginx/sites-enabled/
+sudo systemctl restart nginx
+8. Expose Your Application with Ngrok (Optional)
+If testing locally, install Ngrok:
+ngrok http 8000
