@@ -23,7 +23,6 @@ jobs:
 
       - name: Restart FastAPI and Nginx
         run: |
-          sudo systemctl restart fastapi
           sudo systemctl restart nginx
           
       - name: Start Ngrok (Optional)
