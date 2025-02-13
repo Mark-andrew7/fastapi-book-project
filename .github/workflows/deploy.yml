@@ -1,8 +1,6 @@
 name: Deploy FastAPI with Nginx
 
 on:
-  pull_request:
-    branches: [main]
   push:
     branches:
       - main
@@ -15,6 +13,11 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Pull Latest Changes
+        run: |
+          git fetch origin main
+          git reset --hard origin/main  # Ensure latest updates are applied
+
       - name: Set Up Python
         uses: actions/setup-python@v4
         with:
@@ -22,17 +25,13 @@ jobs:
 
       - name: Install Dependencies
         run: |
+          pip install --upgrade pip
           pip install -r requirements.txt
-
-      - name: Pull Latest Code
-        run: |
-          git fetch origin main
-          git reset --hard origin/main
 
       - name: Restart FastAPI and Nginx
         run: |
-          sudo systemctl restart nginx 
-          sudo pkill -f "uvicorn" || true
+          sudo systemctl restart nginx
+          sudo pkill -f "uvicorn" || true  # Kill old Uvicorn process
           nohup uvicorn main:app --host 0.0.0.0 --port 8000 --reload > uvicorn.log 2>&1 &
 
       - name: Start Ngrok (Optional)
