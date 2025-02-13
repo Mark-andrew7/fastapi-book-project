@@ -22,7 +22,3 @@ async def health_check():
     """Checks if server is active."""
     return {"status": "active"}
 
-@app.get("/fake-endpoint")
-async def fake_endpoint():
-    return {"message": "This is a test deployment!"}
-
