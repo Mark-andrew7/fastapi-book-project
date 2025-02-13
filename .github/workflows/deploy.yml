@@ -1,6 +1,8 @@
 name: Deploy FastAPI with Nginx
 
 on:
+  pull_request:
+    branches: [main]
   push:
     branches:
       - main
