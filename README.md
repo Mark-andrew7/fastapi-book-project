@@ -146,7 +146,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 For support, please open an issue in the GitHub repository.
 
 
-## Deployment Instructions
+## Deployment Instructions - Trigger deployment
 1. Set Up the Server
 Ensure you have a server with Python installed. Update system packages:
 sudo apt update && sudo apt upgrade -y
