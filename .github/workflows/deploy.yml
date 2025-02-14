@@ -21,15 +21,6 @@ jobs:
           ssh-keyscan 100.64.85.36 >> ~/.ssh/known_hosts
         shell: /usr/bin/bash -e {0}
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
-
-      - name: Install Dependencies
-        run: |
-          pip install -r requirements.txt
-
       - name: Copy Files to Server
         run: |
           scp -i ~/.ssh/github_actions -r * kali@100.64.85.36:~/Deployment/fastapi-book-project
@@ -38,5 +29,10 @@ jobs:
         run: |
           ssh -i ~/.ssh/github_actions kali@100.64.85.36 << 'EOF'
             cd ~/Deployment/fastapi-book-project
+            # Stop any running FastAPI instance
+            pkill -f "uvicorn main:app" || true
+            # Install dependencies on the server
+            pip install -r requirements.txt
+            # Start FastAPI
             nohup uvicorn main:app --host 0.0.0.0 --port 8000 > fastapi.log 2>&1 &
           EOF
