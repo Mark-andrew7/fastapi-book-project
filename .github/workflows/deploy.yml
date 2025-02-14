@@ -8,7 +8,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
+    
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -19,6 +19,16 @@ jobs:
           echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/github_actions
           chmod 600 ~/.ssh/github_actions
           ssh-keyscan 100.64.85.36 >> ~/.ssh/known_hosts
+        shell: /usr/bin/bash -e {0}
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
 
       - name: Copy Files to Server
         run: |
@@ -27,9 +37,6 @@ jobs:
       - name: SSH into Server and Restart FastAPI
         run: |
           ssh -i ~/.ssh/github_actions kali@100.64.85.36 << 'EOF'
-            set -e  # Exit on error
             cd ~/Deployment/fastapi-book-project
-            pip install -r requirements.txt
-            pkill -f "uvicorn main:app" || true  # Stop any running FastAPI process
             nohup uvicorn main:app --host 0.0.0.0 --port 8000 > fastapi.log 2>&1 &
           EOF
