@@ -1,4 +1,4 @@
-name: Deploy FastAPI App
+name: Deploy FastAPI with Nginx via Tailscale
 
 on:
   push:
@@ -8,31 +8,25 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
-      - name: Checkout Code
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up SSH Key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/github_actions
-          chmod 600 ~/.ssh/github_actions
-          ssh-keyscan 100.64.85.36 >> ~/.ssh/known_hosts
-        shell: /usr/bin/bash -e {0}
-
-      - name: Copy Files to Server
-        run: |
-          scp -i ~/.ssh/github_actions -r * kali@100.64.85.36:~/Deployment/fastapi-book-project
-
-      - name: SSH into Server and Restart FastAPI
-        run: |
-          ssh -i ~/.ssh/github_actions kali@100.64.85.36 << 'EOF'
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: 100.64.85.36
+          username: kali
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
             cd ~/Deployment/fastapi-book-project
-            # Stop any running FastAPI instance
-            pkill -f "uvicorn main:app" || true
-            # Install dependencies on the server
+            git pull origin main
             pip install -r requirements.txt
-            # Start FastAPI
-            nohup uvicorn main:app --host 0.0.0.0 --port 8000 > fastapi.log 2>&1 &
-          EOF
+
+            # Restart Nginx
+            sudo systemctl restart nginx
+
+            # Restart Uvicorn (Ensure it’s killed before restarting)
+            sudo pkill -f "uvicorn" || true
+            nohup uvicorn main:app --host 0.0.0.0 --port 8000 --reload > uvicorn.log 2>&1 &
