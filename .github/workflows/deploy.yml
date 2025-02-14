@@ -1,4 +1,4 @@
-name: Deploy FastAPI with Nginx
+name: Deploy FastAPI App
 
 on:
   push:
@@ -13,27 +13,23 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Pull Latest Changes
+      - name: Set up SSH Key
         run: |
-          git fetch origin main
-          git reset --hard origin/main  # Ensure latest updates are applied
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/github_actions
+          chmod 600 ~/.ssh/github_actions
+          ssh-keyscan 100.64.85.36 >> ~/.ssh/known_hosts
 
-      - name: Set Up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
-
-      - name: Install Dependencies
+      - name: Copy Files to Server
         run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
+          scp -i ~/.ssh/github_actions -r * kali@100.64.85.36:~/Deployment/fastapi-book-project
 
-      - name: Restart FastAPI and Nginx
+      - name: SSH into Server and Restart FastAPI
         run: |
-          sudo systemctl restart nginx
-          sudo pkill -f "uvicorn" || true  # Kill old Uvicorn process
-          nohup uvicorn main:app --host 0.0.0.0 --port 8000 --reload > uvicorn.log 2>&1 &
-
-      - name: Start Ngrok (Optional)
-        run: |
-          ngrok http 80 > /dev/null &
+          ssh -i ~/.ssh/github_actions kali@100.64.85.36 << 'EOF'
+            set -e  # Exit on error
+            cd ~/Deployment/fastapi-book-project
+            pip install -r requirements.txt
+            pkill -f "uvicorn main:app" || true  # Stop any running FastAPI process
+            nohup uvicorn main:app --host 0.0.0.0 --port 8000 > fastapi.log 2>&1 &
+          EOF
